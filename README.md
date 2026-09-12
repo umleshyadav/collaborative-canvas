@@ -171,17 +171,7 @@ Users choose any display name they want with no identity verification. This is a
 
 ## ⏱️ Time Spent
 
-| Phase | Description | Time |
-|-------|-------------|------|
-| **Architecture design** | Planning layer strategy, WebSocket protocol, undo/redo approach | 1.0 h |
-| **Server** | `server.js`, `drawing-state.js`, `rooms.js` with full event handling | 2.0 h |
-| **CanvasManager** | Two-layer system, Bézier smoothing, RAF loop, replay, touch support | 2.5 h |
-| **WebSocketManager** | Socket.io wrapper, reconnection, latency measurement | 0.5 h |
-| **main.js** | Cross-manager wiring, state sync, resize handling | 0.5 h |
-| **UIManager + CSS** | Toolbar, color picker, user list, toasts, dark glassmorphism theme | 2.0 h |
-| **Documentation** | README.md + ARCHITECTURE.md | 1.0 h |
-| **Testing & deploy** | Multi-user testing, Railway deployment, bug fixes | 0.5 h |
-| **Total** | | **~10 h** |
+The bulk of the time went into the **CanvasManager** — getting the two-layer canvas architecture right, implementing smooth Bézier stroke rendering, and making the undo/redo replay work without visible flicker took the most iteration. The second biggest challenge was the **global undo/redo system** on the server side: designing the event-sourcing operation log, ensuring per-user LIFO stacks were correct, and making sure every client replays to an identical state after any undo required careful thinking and testing. The **real-time sync** itself (stroke batching, client-side prediction, remote cursor interpolation) also needed multiple rounds of tuning to feel smooth and responsive. Architecture planning upfront and documentation at the end were straightforward by comparison.
 
 ---
 
