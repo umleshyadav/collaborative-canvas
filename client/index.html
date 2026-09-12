@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CollabCanvas — Real-Time Collaborative Drawing</title>
+  <meta name="description" content="Draw together in real-time. Multi-user collaborative canvas with live sync, global undo/redo, and cursor tracking." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ── Connection overlay ─────────────────────────────────────────── -->
+  <div id="connection-overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+    <div class="overlay-card" id="join-card">
+      <div class="logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="20" cy="20" r="20" fill="url(#logoGrad)"/>
+          <path d="M12 28 Q16 14 20 20 Q24 26 28 12" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+              <stop offset="0%" stop-color="#6C63FF"/>
+              <stop offset="100%" stop-color="#4ECDC4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>CollabCanvas</span>
+      </div>
+      <h1 id="overlay-title">Start Drawing Together</h1>
+      <p class="overlay-sub">Real-time collaborative drawing canvas</p>
+
+      <div class="form-group">
+        <label for="display-name-input">Your display name</label>
+        <input
+          id="display-name-input"
+          type="text"
+          maxlength="24"
+          placeholder="e.g. Alice"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="room-id-input">Room ID <span class="label-hint">(leave blank for default)</span></label>
+        <input
+          id="room-id-input"
+          type="text"
+          maxlength="32"
+          placeholder="main"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+
+      <button id="join-btn" class="btn btn-primary" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Join Canvas
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main app layout ────────────────────────────────────────────── -->
+  <div id="app" class="app hidden">
+
+    <!-- Header -->
+    <header class="app-header" role="banner">
+      <div class="header-left">
+        <div class="logo logo-sm">
+          <svg width="26" height="26" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="20" cy="20" r="20" fill="url(#logoGradSm)"/>
+            <path d="M12 28 Q16 14 20 20 Q24 26 28 12" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <defs>
+              <linearGradient id="logoGradSm" x1="0" y1="0" x2="40" y2="40">
+                <stop offset="0%" stop-color="#6C63FF"/>
+                <stop offset="100%" stop-color="#4ECDC4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          CollabCanvas
+        </div>
+        <div class="room-badge">
+          Room: <span id="header-room-id">—</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div id="connection-status" class="status-dot status-connecting" title="Connecting…" aria-label="Connection status: connecting"></div>
+        <div id="fps-counter" class="perf-badge" title="Frames per second">— FPS</div>
+        <div id="latency-display" class="perf-badge" title="Round-trip latency">— ms</div>
+      </div>
+    </header>
+
+    <!-- Main canvas area + sidebars -->
+    <div class="workspace">
+
+      <!-- Left toolbar -->
+      <aside class="toolbar" role="toolbar" aria-label="Drawing tools">
+
+        <div class="tool-section">
+          <p class="tool-label">Tool</p>
+          <button id="tool-brush" class="tool-btn active" data-tool="brush" title="Brush (B)" aria-label="Brush tool" aria-pressed="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+          </button>
+          <button id="tool-eraser" class="tool-btn" data-tool="eraser" title="Eraser (E)" aria-label="Eraser tool" aria-pressed="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20H7L3 16l11-11 7 7-1 8z"/><path d="M6.0001 11L13 18"/></svg>
+          </button>
+        </div>
+
+        <div class="tool-section">
+          <p class="tool-label">Color</p>
+          <div class="color-swatches" id="color-swatches" role="radiogroup" aria-label="Color picker"></div>
+          <input id="color-custom" type="color" value="#ffffff" title="Custom color" aria-label="Custom color picker" />
+        </div>
+
+        <div class="tool-section">
+          <p class="tool-label">Size <span id="width-value" class="tool-label-val">8</span>px</p>
+          <input
+            id="stroke-width"
+            type="range"
+            min="1"
+            max="60"
+            value="8"
+            class="slider slider-vertical"
+            aria-label="Stroke width"
+            aria-valuemin="1"
+            aria-valuemax="60"
+            aria-valuenow="8"
+          />
+          <div class="size-preview-wrap">
+            <canvas id="size-preview" width="48" height="48" aria-hidden="true"></canvas>
+          </div>
+        </div>
+
+        <div class="tool-section tool-section-actions">
+          <button id="btn-undo" class="action-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          </button>
+          <button id="btn-redo" class="action-btn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+          </button>
+          <button id="btn-clear" class="action-btn action-btn-danger" title="Clear canvas" aria-label="Clear canvas">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+
+      </aside>
+
+      <!-- Canvas layers -->
+      <main class="canvas-container" id="canvas-container" role="main" aria-label="Drawing canvas">
+        <!-- Base layer: committed strokes -->
+        <canvas id="base-canvas" aria-label="Drawing canvas (committed strokes)"></canvas>
+        <!-- Live layer: in-progress strokes + remote cursors -->
+        <canvas id="live-canvas" aria-label="Drawing canvas (live strokes and cursors)" tabindex="0"></canvas>
+        <!-- Cursor overlay label -->
+        <div id="cursor-tooltip" class="cursor-tooltip" aria-hidden="true"></div>
+      </main>
+
+      <!-- Right panel: users -->
+      <aside class="users-panel" role="complementary" aria-label="Online users">
+        <div class="panel-header">
+          <span>Online</span>
+          <span id="user-count" class="user-count">0</span>
+        </div>
+        <ul id="user-list" class="user-list" aria-label="Online users list" role="list"></ul>
+      </aside>
+
+    </div><!-- /.workspace -->
+
+    <!-- Toast notifications -->
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="false" class="toast-container"></div>
+
+  </div><!-- /#app -->
+
+  <!-- Socket.io client (served by the server) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="canvas.js"></script>
+  <script src="websocket.js"></script>
+  <script src="ui.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
