@@ -4,7 +4,10 @@
 >
 > Open the link in **two browser tabs** — draw in one, watch it appear live in the other.
 
+![CollabCanvas Demo](demo.webp)
+
 ---
+
 
 ## 📋 Table of Contents
 
