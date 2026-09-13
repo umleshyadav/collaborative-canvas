@@ -4,7 +4,19 @@
 >
 > Open the link in **two browser tabs** — draw in one, watch it appear live in the other.
 
-![CollabCanvas Demo](demo.webp)
+### 🖼️ Real-Time Sync — Proof Screenshots
+
+**Tab 1 — Alice draws red strokes:**
+
+![Alice drawing red strokes](screenshots/alice-tab.png)
+
+**Tab 2 — Bob joins and instantly sees Alice's strokes + Alice in the user list:**
+
+![Bob's tab showing Alice's strokes synced](screenshots/bob-tab-synced.png)
+
+**Tab 1 — Alice sees Bob's teal strokes appear in real-time:**
+
+![Alice's tab showing Bob's teal strokes](screenshots/alice-tab-reciprocated.png)
 
 ---
 
